@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <style>
+            body {
+              padding: 100px;
+              width: 1000px;
+              margin: auto;
+              text-align: left;
+              font-weight: 300;
+              font-family: 'Open Sans', sans-serif;
+              color: #121212;
+            }
+            h1, h2, h3, h4 {
+              font-family: 'Source Sans Pro', sans-serif;
+            }
+          </style>
+          <title>CS 184 Final Project</title>
+          <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+          <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+    </head>
+    <body>
+        <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+        <h1 align="middle">Final Project: Multi-Shot HDR</h1>
+        <h2 align="middle">Akhil Sachdev, Andy Chen, William Race, Larry Gan</h2>
+        <br><br>
+
+        <h2 align="left">Summary</h2>
+            <p>We are implementing multi-shot HDR with color correction and auto-alignment. Multi-shot HDR allows us to create images with greater detail and more accurate colors than regular HDR.</p>
+
+        <h2 align="left">Problem Description</h2>
+            <p>Depending on their physical specs, some cameras are limited in their ability to deliver HDR images and non-noisy low light images. This is mainly because their equipment is physically limited by the light it could let in. Therefore, giving lower spec cameras further capability through just software fixes would be very helpful in allowing people to take better photos. This problem is obviously pretty challenging because we are basically trying to allow cameras to see more light without actually making them physically better at letting in more light. We will try to solve this by taking burst images, which is taking multiple images back to back at nearly the same time, and combining them into one image with higher dynamic range and lower noise. This technique requires us to be able to align images automatically given any set of images, and then automatically combine those aligned images and increase their dynamic range and correct their color.</p>
+
+        <h2 align="left">Goals and Deliverables</h2>
+
+        <p>We will include landscape images in our presentation. Landscape images are difficult to accomplish without multi-shot HDR. Landscape photographers usually take two images at different exposure levels – one image exposed to the sky and the other exposed to the ground – and then stitch them together in post. We will instead achieve this automatically through image processing. 
+We will also show improvement in images taken in a low-light setting and show how multi-shot HDR avoids underexposure while preserving detail.</p>
+
+        <h3>How Quality Will Be Assesed</h3>
+
+        <p>We want our result images to truly have higher HDR while still looking good.HDR is the ratio between the maximum light intensity and minimum light intensity.</p>
+        <p>If we finish the project ahead of schedule, we hope to implement some of the finishing touches mentioned in the burst photography paper to produce a more robust image from a burst of photos.</p>
+
+
+        <h3>Schedule</h3>
+        <p>
+            Week 1:Take photos, draft design for code
+        </p>
+        <p>Week 2:Implement Auto Alignment</p>
+        <p>Week 3:Implement HDR</p>
+        <p>Week 4:Implement color correction</p>
+
+        <h3>Resources</h3>
+        <ul>
+            <li><a href="https://static.googleusercontent.com/media/hdrplusdata.org/en//hdrplus.pdf">Burst photography for high dynamic range and low-light imaging
+                on mobile cameras</a></li>
+            <li><a href="https://www.math.uci.edu/icamp/courses/math77c/demos/hist_eq.pdf">Histogram Equalization</a></li>
+            <li><a href="https://ieeexplore.ieee.org/document/7574902">Fifty Shades of HDR</a></li>
+            <li>We will be using our personal laptops (windows and mac, with access to gpus) for this project, Willie has a digital camera we can use to take burst photos. We will also use online platforms like Google Collab to run our code</li>
+        </ul>
+
+
+        
+
+        
+    </body>
+</html>
