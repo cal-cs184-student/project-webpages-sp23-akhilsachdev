@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <style>
+            body {
+              padding: 100px;
+              width: 1000px;
+              margin: auto;
+              text-align: left;
+              font-weight: 300;
+              font-family: 'Open Sans', sans-serif;
+              color: #121212;
+            }
+            h1, h2, h3, h4 {
+              font-family: 'Source Sans Pro', sans-serif;
+            }
+          </style>
+          <title>CS 184 Final Project</title>
+          <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+          <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+    </head>
+    <body>
+        <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+        <h1 align="middle">Final Project Milestone: Multi-Shot HDR</h1>
+        <h2 align="middle">Akhil Sachdev, Andy Chen, William Race, Larry Gan</h2>
+        <br><br>
+
+        <h2 align="left">Current Progress</h2>
+            <p>As of now we’ve worked on aligning the images so that they can be processed into HDR. Our strategy involves: (1) using a Harris corner detector to find all corners in our pictures, which are used as features, (2) utilizing Adaptive Non-Maximal Suppression to remove half the points in order to reduce the runtime while maximizing the probability of good results, (3) extracting a 40x40 chunk of the images at each point we choose, and compare features in each image to find the best matches, (4) we then use those points and RANSAC to compute a good homography to warp one image to another, and (5) transform one of the images into the space of the other image, which aligns them.</p>
+        <h2 align="left">Preliminary Results</h2>
+            <p>We are able to align two images together automatically and without input from humans. The code is super un-optimized though, especially as images get larger.
+            </p>
+        <h2 align="left">Progress Reflection</h2>
+            <p>We are somewhat on track compared to our initial goals. We have an unoptimized auto-aligner and a decent plan of how to go about our code.</p>
+        <h2 align="left">Future Plans</h2>
+            <p>Based on our current progress, there are a few things that need to be changed before our final product. The first thing that needs to be improved is the runtime; right now the code is a lot slower than it should be. To do this we’re gonna try using numba’s jit and numpy parallelization. Another thing that we need to optimize is to make the program work for more than just pairs of images. We also could want to implement automatic cropping so that it’s easier for us to crop out the unnecessary parts of the image or optimize the code to have more overlap between images.</p>
+            <p>We also plan on implementing HDR after image alignment is fully implemented and optimized. Our current strategy is to use bracketed exposure. We take our sharpest image to be our reference image. We then divide the reference image into regions of similar light intensities. We then take the best-exposed regions from the burst images and merge them into the corresponding region in the reference image. </p>
+
+        
+        <h3>Plan of action</h3>
+        <p>
+          4/25-4/27: Finish optimizing the alignment code and get started on implmenting HDR.
+        </p>
+        <p>4/28-5/2: Finish implmenting HDR using temporal filtering and optimizing code for performance.</p>  
+    </body>
+</html>
