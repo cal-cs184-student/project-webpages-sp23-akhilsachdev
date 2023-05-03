@@ -71,23 +71,163 @@
                     </div>
                     <br />
                     <li>Our Harris corner detector returns a lot of possible candidates, and obviously not all of them are useful. Thus we
-                        run Adaptive Non-Maximal Suppression (ANMS) on our candidate Harris corners to filter out the redundant and weak candidates. To do this, we loop through all of the points and calculate the smallest radius where that point is the strongest. We store that radius with the point and sort all of the points by radius in descending order. We then take the largest 2000 radii.</li>
-                    <li>Extract the features at the location of every Harris corner in order to compare features in the future. We take a 40x40 slice of the image at each selected Harris corner’s location, normalize the slice, and resize into an 8x8 slice. Normalizing helps decrease the effect of differing levels of brightness and downsizing helps add a bit of rotation resistance, allowing us to have a more robust merge. </li>
+                        run Adaptive Non-Maximal Suppression (ANMS) on our candidate Harris corners to filter out the redundant and weak candidates. To do this, we loop through all of the points and calculate the smallest radius where that point is the strongest. We store that radius with the point and sort all of the points by radius in descending order. We then take the largest 2000 radii.
+                        Here are the results, notice how the points are more spread out now.
+                    </li>
+                    <table style="width:100%">
+                        <tr align="center">
+                            <td>
+                                <img src="a/features_kept_0.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/features_kept_1.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                        <br />
+                        <tr align="center">
+                            <td>
+                                <img src="a/features_kept_2.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/features_kept_3.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                        <br />
+                        <tr align="center">
+                            <td>
+                                <img src="a/features_kept_4.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/features_kept_5.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                        <tr align="center">
+                            <td>
+                                <img src="a/features_kept_6.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                    </table>
+                    <li>Now that we know where the features are, we will extract the features at the location of every Harris corner in order to compare features in the future. We take a 40x40 slice of the image at each selected Harris corner’s location, normalize the slice, and resize into an 8x8 slice. Normalizing helps decrease the effect of differing levels of brightness and downsizing helps add a bit of rotation resistance, allowing us to have a more robust merge. 
+                    </li>
                     <li>Once we have all of our features, we will use normalized cross correlation to compare how similar each feature in image 1 is compared to features in all the other images. If the best match between image 1 and another image is significantly better (our threshold was 5 times better) than the second best match, we would consider it a good match and keep it for the next step.</li>
+                    <table style="width:100%">
+                        <tr align="center">
+                            <td>
+                                <img src="a/features_matched_0.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/features_matched_1.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                        <br />
+                        <tr align="center">
+                            <td>
+                                <img src="a/features_matched_2.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/features_matched_3.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                        <br />
+                        <tr align="center">
+                            <td>
+                                <img src="a/features_matched_4.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/features_matched_5.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                    </table>
                     <li>After we have all the matching points, we use Random Sample Consensus to find a good homography matrix to transform every image into the same space as image 1. In order to do RANSAC, we select four feature pairs at random, compute the homography matrix between those 4 pairs, find the inliers where the distance between the transformed and original point are below 2, and keep the largest set of inliers. We repeat the process 1000 times and use the largest set of inliers to compute our final homography</li>
+                    <table style="width:100%">
+                        <tr align="center">
+                            <td>
+                                <img src="a/ransac_kept_1.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/ransac_kept_2.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                        <br />
+                        <tr align="center">
+                            <td>
+                                <img src="a/ransac_kept_3.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/ransac_kept_4.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                        <br />
+                        <tr align="center">
+                            <td>
+                                <img src="a/ransac_kept_5.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/ransac_kept_6.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                    </table>
                     <li>Once we have a final homography for each image, we load a colored version of the image, pad its edges to avoid losing bits of the image during the transform, and use skimage’s transform function to transform that image into the space of image 1.</li>
+                    <table style="width:100%">
+                        <tr align="center">
+                            <td>
+                                <img src="a/img_warped_0.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/img_warped_1.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                        <br />
+                        <tr align="center">
+                            <td>
+                                <img src="a/img_warped_2.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/img_warped_3.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                        <br />
+                        <tr align="center">
+                            <td>
+                                <img src="a/img_warped_4.png" align="middle" width="400px" />
+                            </td>
+                            <td>
+                                <img src="a/img_warped_5.png" align="middle" width="400px" />
+                            </td>
+                        </tr>
+                    </table>
                     <li>Lastly we crop all the images to only the area where they all align and save those cropped images in order to do temporal denoising on them. We also create a separate image by averaging the cropped images together in an attempt to reduce noise.</li>
+                    <table style="width:100%">
+                        <tr align="center">
+                            <td>
+                                <img src="a/final_intermediate_0.png" align="middle" width="400px" />
+                                <figcaption>Final image still padded + corners for crop</figcaption>
+                            </td>
+                            <td>
+                                <img src="a/final_cropped_orig_5.png" align="middle" width="400px" />
+                                <figcaption>Final image no pad</figcaption>
+                            </td>
+                        </tr>
+                        <br />
+                        <tr align="center">
+                            <td>
+                                <img src="a/all_warped_final.png" align="middle" width="400px" />
+                                <figcaption>Final cropped</figcaption>
+                            </td>
+                        </tr>
+                        <br />
+                    </table>
                 </ol>
                 <p>Optimizing the code to work for large images was a pretty large challenge. Our initial iteration of the alignment code relied only on python for loops and was super slow. It took around 10 minutes to create aligned pairs of small, 600x800 pixel images. Since a lot of the runtime scales in polynomial time, this unoptimized approach was not going to work for the larger 3000x4000 camera pictures we were planning on aligning. As a result, we poured significant efforts into increasing the speed of our code. The most successful approach was to replace as many for loops with numpy vectorization as possible. This was able to decrease runtimes for all functions significantly. We also tried was to add numba’s @jit decorators to all of our functions. Numba’s @jit decorator tries to compile python code into fast machine code, and we tried it first because it seemed like an easy way to decrease runtime free. Unfortunately, we weren’t able to get the decorator to work for all the functions due to type errors, so we just used numpy vectorization. Another big optimization we did was to switch our feature matching code from manually comparing each feature using for loops to doing feature comparisons using a matrix multiplication.<p>
                 
-                <p>Here are some examples of the speedups we got:</p>
+                <p>Here are some examples of the speedups we got, times are in seconds:</p>
                 <ul>
-                    <li>Old ANMS: 271.2730002403259 (ran it twice though)</li>
+                    <li>Old ANMS: 271.2730002403259 (This time came from 2 runs of the function)</li>
                     <li>New ANMS: 0.5030028820037842</li>
-                    <li>Old Feature Matching: 21.665003061294556 (ran it twice though)</li>
+                    <li>Old Feature Matching: 21.665003061294556 (This time came from 2 runs of the function)</li>
                     <li>New Feature Matching jit: 7.206876516342163</li>
                     <li>New Feature Matching matrix: 0.0739743709564209</li>
-                    <li>Old RANSAC: 30.82899832725525 (ran it twice though)</li>
+                    <li>Old RANSAC: 30.82899832725525 (This time came from 2 runs of the function)</li>
                     <li>New RANSAC: 5.108975172042847</li>
                     <li>Feature Extraction was actually pretty fast so no changes were needed</li>
                 </ul>
