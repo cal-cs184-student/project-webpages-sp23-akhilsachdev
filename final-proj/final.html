@@ -29,11 +29,49 @@
             <p></p>
         <h2 align="left">Technical Approach</h2>
         <h3 align="middle-left">Image Alignment</h3>
-            <p>When taking bursts of images, we don’t have a guarantee that all of the images are necessarily aligned. Thus, before being able to do HDR and denoising, we have to have an alignment step to make sure our images are aligned. The paper authors faced constraints of having to take images on phones, so they had to make their alignment process automatic and dast. Thus, as described in section 4 of the paper, they implemented alignment using phase correlation, which involves computing a Fourier transform, doing a cross-power spectrum on the results, inversing the transform, and finding the argmax to determine the amount of the shift. While phase correlation is fast and efficient, it isn’t very resistant to rotation, furthermore, we had access to more powerful desktop processors and weren't constrained by processing speed. As a result, we decided to use a feature based alignment method instead of phase correlation.</p>
+            <p>When taking bursts of images, we don’t have a guarantee that all of the images are necessarily aligned. Thus, before being able to do HDR and denoising, we have to have an alignment step to make sure our images are aligned. The paper authors faced constraints of having to take images on phones, so they had to make their alignment process automatic and fast. 
+                Thus, as described in section 4 of the paper, they implemented alignment using <a href="https://en.wikipedia.org/wiki/Phase_correlation">phase correlation</a>, which involves computing a Fourier transform, doing a cross-power spectrum on the results, inversing the transform, and finding the argmax to determine the amount of the shift. While phase correlation is fast and efficient, it isn’t very resistant to rotation, furthermore, we had access to more powerful desktop processors and weren't constrained by processing speed. As a result, we decided to use a <a href="https://inst.eecs.berkeley.edu/~cs194-26/fa22/Lectures/feature-alignment-Part-1.pdf">feature based alignment</a> method instead of phase correlation.</p>
                 <p>Our method takes in a folder of unaligned images and outputs the aligned version of all of those images. We do this by selecting the first image as our base image and finding good matches of points between that point and all other images using the following steps:</p>
                 <ol type="1">
-                    <li>We load a grayscale version of our image and detect all Harris corners (which are scale invariant corners) in all images; these are the initial candidates we will use to align all of them. Our Harris corner detector returns a lot of possible candidates, and obviously not all of them could be useful, which leads to step 2</li>
-                    <li>Run Adaptive Non-Maximal Suppression (ANMS) on our candidate Harris corners to filter out the redundant and weak candidates. To do this, we loop through all of the points and calculate the smallest radius where that point is the strongest. We store that radius with the point and sort all of the points by radius in descending order. We then take the largest 2000 radii.</li>
+                    <li>We load a grayscale version of our image and detect all Harris corners (which are scale invariant corners) in all images; these are the initial candidates we will use to align all of them.</li>
+                    <div align="middle">
+                        <table style="width:100%">
+                            <tr align="center">
+                                <td>
+                                    <img src="a/all_harris_0.png" align="middle" width="400px" />
+                                </td>
+                                <td>
+                                    <img src="a/all_harris_1.png" align="middle" width="400px" />
+                                </td>
+                            </tr>
+                            <br />
+                            <tr align="center">
+                                <td>
+                                    <img src="a/all_harris_2.png" align="middle" width="400px" />
+                                </td>
+                                <td>
+                                    <img src="a/all_harris_3.png" align="middle" width="400px" />
+                                </td>
+                            </tr>
+                            <br />
+                            <tr align="center">
+                                <td>
+                                    <img src="a/all_harris_4.png" align="middle" width="400px" />
+                                </td>
+                                <td>
+                                    <img src="a/all_harris_5.png" align="middle" width="400px" />
+                                </td>
+                            </tr>
+                            <tr align="center">
+                                <td>
+                                    <img src="a/all_harris_6.png" align="middle" width="400px" />
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <br />
+                    <li>Our Harris corner detector returns a lot of possible candidates, and obviously not all of them are useful. Thus we
+                        run Adaptive Non-Maximal Suppression (ANMS) on our candidate Harris corners to filter out the redundant and weak candidates. To do this, we loop through all of the points and calculate the smallest radius where that point is the strongest. We store that radius with the point and sort all of the points by radius in descending order. We then take the largest 2000 radii.</li>
                     <li>Extract the features at the location of every Harris corner in order to compare features in the future. We take a 40x40 slice of the image at each selected Harris corner’s location, normalize the slice, and resize into an 8x8 slice. Normalizing helps decrease the effect of differing levels of brightness and downsizing helps add a bit of rotation resistance, allowing us to have a more robust merge. </li>
                     <li>Once we have all of our features, we will use normalized cross correlation to compare how similar each feature in image 1 is compared to features in all the other images. If the best match between image 1 and another image is significantly better (our threshold was 5 times better) than the second best match, we would consider it a good match and keep it for the next step.</li>
                     <li>After we have all the matching points, we use Random Sample Consensus to find a good homography matrix to transform every image into the same space as image 1. In order to do RANSAC, we select four feature pairs at random, compute the homography matrix between those 4 pairs, find the inliers where the distance between the transformed and original point are below 2, and keep the largest set of inliers. We repeat the process 1000 times and use the largest set of inliers to compute our final homography</li>
