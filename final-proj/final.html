@@ -21,12 +21,12 @@
     </head>
     <body>
         <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
-        <h1 align="middle">Final Project Milestone: Multi-Shot HDR</h1>
+        <h1 align="middle">Final Project: Multi-Shot HDR</h1>
         <h2 align="middle">Akhil Sachdev, Andy Chen, William Race, Larry Gan</h2>
         <br><br>
 
         <h2 align="left">Abstract</h2>
-            <p></p>
+            <p>The goal of this project is to implement Multi-Shot HDR using burst photos. To do this we aligned the images, denoised the image with temporal and chroma denoising, and then we did exposure fusion to get the final output. The purpose of this was to increase the dynamic range of photos in order to generate higher quality images.</p>
         <h2 align="left">Technical Approach</h2>
         <h3 align="middle-left">Image Alignment</h3>
             <p>When taking bursts of images, we don’t have a guarantee that all of the images are necessarily aligned. Thus, before being able to do HDR and denoising, we have to have an alignment step to make sure our images are aligned. The paper authors faced constraints of having to take images on phones, so they had to make their alignment process automatic and dast. Thus, as described in section 4 of the paper, they implemented alignment using phase correlation, which involves computing a Fourier transform, doing a cross-power spectrum on the results, inversing the transform, and finding the argmax to determine the amount of the shift. While phase correlation is fast and efficient, it isn’t very resistant to rotation, furthermore, we had access to more powerful desktop processors and weren't constrained by processing speed. As a result, we decided to use a feature based alignment method instead of phase correlation.</p>
