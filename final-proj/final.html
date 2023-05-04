@@ -26,14 +26,16 @@
         <br><br>
 
         <h2 align="left">Abstract</h2>
-            <p>The goal of this project is to implement Multi-Shot HDR using burst photos. To do this we aligned the images, denoised the image with temporal and chroma denoising, and then we did exposure fusion to get the final output. The purpose of this was to increase the dynamic range of photos in order to generate higher quality images.</p>
+            <p>The goal of this project is to implement Multi-Shot HDR using burst photos using techniques similar to the ones used in <a href = "https://dl.acm.org/doi/pdf/10.1145/2980179.2980254">this paper</a>. To do this we aligned the images, denoised the image with temporal and chroma denoising, and then we did exposure fusion to get the final output. The purpose of this was to increase the dynamic range of photos in order to generate higher quality images.</p>
         <h2 align="left">Technical Approach</h2>
         <h3 align="middle-left">Image Alignment</h3>
             <p>When taking bursts of images, we don’t have a guarantee that all of the images are necessarily aligned. Thus, before being able to do HDR and denoising, we have to have an alignment step to make sure our images are aligned. The paper authors faced constraints of having to take images on phones, so they had to make their alignment process automatic and fast. 
                 Thus, as described in section 4 of the paper, they implemented alignment using <a href="https://en.wikipedia.org/wiki/Phase_correlation">phase correlation</a>, which involves computing a Fourier transform, doing a cross-power spectrum on the results, inversing the transform, and finding the argmax to determine the amount of the shift. While phase correlation is fast and efficient, it isn’t very resistant to rotation, furthermore, we had access to more powerful desktop processors and weren't constrained by processing speed. As a result, we decided to use a <a href="https://inst.eecs.berkeley.edu/~cs194-26/fa22/Lectures/feature-alignment-Part-1.pdf">feature based alignment</a> method instead of phase correlation.</p>
-                <p>Our method takes in a folder of unaligned images and outputs the aligned version of all of those images. We do this by selecting the first image as our base image and finding good matches of points between that point and all other images using the following steps:</p>
+                <p>Our method takes in a folder of unaligned images and outputs the aligned version of all of those images. We do this by selecting the first image as our base image and finding good matches of points between that point and corresponding points accross all other images to compute a good homography between them. Examples from the process of aligning a smaller image will be used to illustrate stps:</p>
                 <ol type="1">
-                    <li>We load a grayscale version of our image and detect all Harris corners (which are scale invariant corners) in all images; these are the initial candidates we will use to align all of them.</li>
+                    <li>We load a grayscale version of our image and detect all Harris corners (which are scale invariant corners) in all images; these are the initial candidates we will use to align all of them.
+                        The following are all detected harris corners overlaid onto the loaded grayscale image:
+                    </li>
                     <div align="middle">
                         <table style="width:100%">
                             <tr align="center">
@@ -109,7 +111,9 @@
                     </table>
                     <li>Now that we know where the features are, we will extract the features at the location of every Harris corner in order to compare features in the future. We take a 40x40 slice of the image at each selected Harris corner’s location, normalize the slice, and resize into an 8x8 slice. Normalizing helps decrease the effect of differing levels of brightness and downsizing helps add a bit of rotation resistance, allowing us to have a more robust merge. 
                     </li>
-                    <li>Once we have all of our features, we will use normalized cross correlation to compare how similar each feature in image 1 is compared to features in all the other images. If the best match between image 1 and another image is significantly better (our threshold was 5 times better) than the second best match, we would consider it a good match and keep it for the next step.</li>
+                    <li>Once we have all of our features, we will use normalized cross correlation to compare how similar each feature in image 1 is compared to features in all the other images. If the best match between image 1 and another image is significantly better (our threshold was 5 times better) than the second best match, we would consider it a good match and keep it for the next step.
+                        The following pictures have image 1 on the left and all the other images on the right. The locations of the features that match are overlaid on the images:
+                    </li>
                     <table style="width:100%">
                         <tr align="center">
                             <td>
@@ -138,36 +142,40 @@
                             </td>
                         </tr>
                     </table>
-                    <li>After we have all the matching points, we use Random Sample Consensus to find a good homography matrix to transform every image into the same space as image 1. In order to do RANSAC, we select four feature pairs at random, compute the homography matrix between those 4 pairs, find the inliers where the distance between the transformed and original point are below 2, and keep the largest set of inliers. We repeat the process 1000 times and use the largest set of inliers to compute our final homography</li>
+                    <li>After we have all the matching points, we use Random Sample Consensus to find a good homography matrix to transform every image into the same space as image 1. In order to do RANSAC, we select four feature pairs at random, compute the homography matrix between those 4 pairs, find the inliers where the distance between the transformed and original point are below 2, and keep the largest set of inliers. We repeat the process 1000 times and use the largest set of inliers to compute our final homography.
+                        The following pictures have image 1 on the left and all the other images on the right. The images are padded here to prevent loss of parts of images in the later merge. The locations of the features chosen by RANSAC are overlaid on the images:
+                    </li>
                     <table style="width:100%">
                         <tr align="center">
                             <td>
+                                <img src="a/ransac_kept_0.png" align="middle" width="400px" />
+                            </td>
+                            <td>
                                 <img src="a/ransac_kept_1.png" align="middle" width="400px" />
                             </td>
+                        </tr>
+                        <br />
+                        <tr align="center">
                             <td>
                                 <img src="a/ransac_kept_2.png" align="middle" width="400px" />
                             </td>
-                        </tr>
-                        <br />
-                        <tr align="center">
                             <td>
                                 <img src="a/ransac_kept_3.png" align="middle" width="400px" />
                             </td>
-                            <td>
-                                <img src="a/ransac_kept_4.png" align="middle" width="400px" />
-                            </td>
                         </tr>
                         <br />
                         <tr align="center">
                             <td>
-                                <img src="a/ransac_kept_5.png" align="middle" width="400px" />
+                                <img src="a/ransac_kept_4.png" align="middle" width="400px" />
                             </td>
                             <td>
-                                <img src="a/ransac_kept_6.png" align="middle" width="400px" />
+                                <img src="a/ransac_kept_5.png" align="middle" width="400px" />
                             </td>
                         </tr>
                     </table>
-                    <li>Once we have a final homography for each image, we load a colored version of the image, pad its edges to avoid losing bits of the image during the transform, and use skimage’s transform function to transform that image into the space of image 1.</li>
+                    <li>Once we have a final homography for each image, we load a colored version of the image, pad its edges to avoid losing bits of the image during the transform, and use skimage’s transform function to transform that image into the space of image 1.
+                        Here's the pairwise aligned and stacked images. The original image is the largest one and we created all the images to align by cutting parts off from the original. Thus the new images I'm aligning are smaller than hte original:
+                    </li>
                     <table style="width:100%">
                         <tr align="center">
                             <td>
@@ -196,7 +204,9 @@
                             </td>
                         </tr>
                     </table>
-                    <li>Lastly we crop all the images to only the area where they all align and save those cropped images in order to do temporal denoising on them. We also create a separate image by averaging the cropped images together in an attempt to reduce noise.</li>
+                    <li>Lastly we crop all the images to only the area where they all align and save those cropped images in order to do temporal denoising on them. We also create a separate image by averaging the cropped images together in an attempt to reduce noise.
+                        Here are the padded version of all ligned images, all the aligned images together without pad, and cropped version of the image where all the images overlap:
+                    </li>
                     <table style="width:100%">
                         <tr align="center">
                             <td>
@@ -223,20 +233,46 @@
                 <p>Here are some examples of the speedups we got, times are in seconds:</p>
                 <ul>
                     <li>Old ANMS: 271.2730002403259 (This time came from 2 runs of the function)</li>
-                    <li>New ANMS: 0.5030028820037842</li>
+                    <li>New ANMS using numpy: 0.5030028820037842</li>
                     <li>Old Feature Matching: 21.665003061294556 (This time came from 2 runs of the function)</li>
-                    <li>New Feature Matching jit: 7.206876516342163</li>
-                    <li>New Feature Matching matrix: 0.0739743709564209</li>
+                    <li>New Feature Matching using jit: 7.206876516342163</li>
+                    <li>New Feature Matching using a numpy matrix: 0.0739743709564209</li>
                     <li>Old RANSAC: 30.82899832725525 (This time came from 2 runs of the function)</li>
-                    <li>New RANSAC: 5.108975172042847</li>
+                    <li>New RANSAC using numpy: 5.108975172042847</li>
                     <li>Feature Extraction was actually pretty fast so no changes were needed</li>
                 </ul>
 
                 <p>I definitely learned a lot more about numpy vectorization and array slicing throughout this experience. I wasn’t completely comfortable using numpy before, but I’m definitely more familiar with it now. I also learned a bit about jit and how it can be used to speed things up, even if I wasn’t able to make things work in the end. Lastly, it will always be surprising to me how well just randomly selecting points to compute homographies works.</p>
         <h3 align="left">Temporal Denoising</h3>
-
+            
             <p>We implemented temporal denoising, described in section 5 of the paper, Merging Frames. This involved splitting the image into separate 16x16 tiles and computing the 2D Fourier transforms of each tile to convert them to the frequency domain. Then we average across all Fourier transformed images for each tile before computing the inverse 2D Fourier transform on the averaged result to retrieve the transformed image data. After we’ve converted all the averages tiles back from the fourier transform, we stitch the entire transformed image back together. This process is repeated for every color channel and the channels were recombined into a rgb image at the end. Instead of just computing the average of the transformed images, the paper uses a more complicated formula that is meant to account for alignment failure. However, since we used a different alignment algorithm that we believe to be more robust, we opted to use the naive formula because it would save on the computation time of calculating the noise variance and other array calculations.
+            Here's our results. On the left are one of the original images from the burst, and the result of temporal denoising a=on all images. 
+            On the right are zoomed in shots of both images used to illustrate noise levels.
             </p>
+            <table style="width:100%">
+                <tr align="center">
+                    <td>
+                        <img src="a/cropped_5_dng.jpg" align="middle" width="400px" />
+                        <figcaption>One of the original burst frames</figcaption>
+                    </td>
+                    <td>
+                        <img src="a/noise.png" align="middle" width="400px" />
+                        <figcaption>Zoomed in disply of noise levels (there's quite a bit)</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr align="center">
+                    <td>
+                        <img src="a/res_temporal_denoised.jpg" align="middle" width="400px" />
+                        <figcaption>Temporally denoised result</figcaption>
+                    </td>
+                    <td>
+                        <img src="a/denoised.png" align="middle" width="400px" />
+                        <figcaption>Zoomed in disply of noise levels (there's a lot less)</figcaption>
+                    </td>
+                </tr>
+                <br />
+            </table>
             <p>When implementing this part of the project, we had trouble getting the actual image to appear, and many of our outputs were randomly colored pixels. This was because we were not converting to and from the frequency domain properly, resulting in a strange output. We fixed this by using the 2-D inverse FFT instead of the 1-D iFFT. Once we fixed this problem, the output image resembled the original image, but there were still strange artifacts in the result. After some debugging, we found that the issue was converting the arrays with np.real. When aggregating the values of the array to calculate the average, we ran into an issue with trying to add complex64 types to float64 types. We decided to turn the complex64 array to real numbers because we thought the imaginary part of the number was insignificant. However, we found that when using np.add and keeping the numbers complex, we could reconstruct the original image without the artifacts.</p>
             <p>One thing we learned from implementing this part of the code was the importance of writing code that was easy to debug. While Andy coded the initial implementation of the code, it was difficult to debug and read because some parts of the algorithm were not implemented efficiently and seemed confusing. Larry was able to improve upon the code by using techniques like numpy array slicing and condensed the code by using fewer variables and having more straightforward steps, making it easier to understand what was happening in each line of the code. This made it easier to isolate the bugs in the code and fix them.</p>
         <h3 align="left">Chroma Denoising</h3>
@@ -245,7 +281,116 @@
 
         <h3 align="left">Exposure Fusion</h3>
             <p>After denoising, we use tone mapping to produce HDR images. In particular, we use the method of synthetic exposures – we apply gain and gamma correction to produce several copies of the image at varied exposure levels. Then we merge these exposures into a final image according to weights. The Hasinoff et al. paper we referenced uses a simple weighting system which ranks pixels by the Euclidean distance of the pixel intensity to well-exposedness (0.5) however we use the Gaussian kernel instead of Euclidean distance so that the results are smooth. We also boost contrast by taking the Laplacian of the exposure and preferring pixels that have a high gradient. This will sometimes result in bright outlines around high contrasting objects in the scene so to fix this we only use this weight to boost dark pixels. We do this by multiplying the gradients weight by the inverse intensity of the pixel. This gets rid of the bright outlines while still creating the high contrast look we are looking for. </p>
+            <table style="width:100%">
+                <tr align="center">
+                    <td>
+                        <img src="a/basic.png" align="middle" width="400px" />
+                        <figcaption>Basic Contrast</figcaption>
+                    </td>
+                    <td>
+                        <img src="a/only_dark.png" align="middle" width="400px" />
+                        <figcaption>Contrast Only Dark Pixels</figcaption>
+                    </td>
+                </tr>
+                <br />
+            </table>
             <p>Avoiding a cartoony result is a recurring difficulty in the exposure fusion process. The reference paper uses only two synthetic exposures however this severely limits the ability of the program to improve scenes with a high dynamic range without resulting in a cartoony image. We find that using about 4-6 exposures provides the best results. This allows us to have even differences in gain between the exposures which provides smoother transitions when the images are stitched together. In choosing gain values, we assume that the original image is on average underexposed to begin with so we create one darker exposure and several brighter exposures. While our process is slower than the reference paper’s implementation, it produces a better result. Our approach is therefore a middle ground between phone HDR and exposure bracketing. Since we use synthetic exposures, the main advantage of our approach is that we do not have to vary exposure when taking a burst of images to feed into our pipeline. This means that capturing a scene is still quick for the photographer and we avoid motion blur from having to take longer exposures. </p>
+
+
+        <h3 align="left">Final Results:</h3>
+        <p>Here are some final results of our project. A sample image from the original burst is on the left, and our HDR result from applying all of the techniques on the bursts is on the right.
+            Some of the images have areas that look a bit oversaturated, but generally we were able to significantly reduce noise and increase the dynamic range of our images.
+        </p>
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="a/cropped_1_dng.jpg" align="middle" width="400px" />
+                    <figcaption>Original Image 1</figcaption>
+                </td>
+                <td>
+                    <img src="a/hdr_res_1.jpg" align="middle" width="400px" />
+                    <figcaption>HDR Result Image 1</figcaption>
+                </td>
+            </tr>
+            <br />
+            <tr align="center">
+                <td>
+                    <img src="a/cropped_2_dng.jpg" align="middle" width="400px" />
+                    <figcaption>Original Image 2</figcaption>
+                </td>
+                <td>
+                    <img src="a/hdr_res_2.jpg" align="middle" width="400px" />
+                    <figcaption>HDR Result Image 2</figcaption>
+                </td>
+            </tr>
+            <br />
+            <tr align="center">
+                <td>
+                    <img src="a/cropped_3_dng.jpg" align="middle" width="400px" />
+                    <figcaption>Original Image 3</figcaption>
+                </td>
+                <td>
+                    <img src="a/hdr_res_3.jpg" align="middle" width="400px" />
+                    <figcaption>HDR Result Image 3</figcaption>
+                </td>
+            </tr>
+            <br />
+            <tr align="center">
+                <td>
+                    <img src="a/cropped_4_dng.jpg" align="middle" width="400px" />
+                    <figcaption>Original Image 4</figcaption>
+                </td>
+                <td>
+                    <img src="a/hdr_res_4.jpg" align="middle" width="400px" />
+                    <figcaption>HDR Result Image 4</figcaption>
+                </td>
+            </tr>
+            <br />
+            <tr align="center">
+                <td>
+                    <img src="a/cropped_5_dng.jpg" align="middle" width="400px" />
+                    <figcaption>Original Image 5</figcaption>
+                </td>
+                <td>
+                    <img src="a/hdr_res_5.jpg" align="middle" width="400px" />
+                    <figcaption>HDR Result Image 5</figcaption>
+                </td>
+            </tr>
+            <br />
+            <tr align="center">
+                <td>
+                    <img src="a/cropped_6_dng.jpg" align="middle" width="400px" />
+                    <figcaption>Original Image 6</figcaption>
+                </td>
+                <td>
+                    <img src="a/hdr_res_6.jpg" align="middle" width="400px" />
+                    <figcaption>HDR Result Image 6</figcaption>
+                </td>
+            </tr>
+            <br />
+            <tr align="center">
+                <td>
+                    <img src="a/cropped_7_dng.jpg" align="middle" width="400px" />
+                    <figcaption>Original Image 7</figcaption>
+                </td>
+                <td>
+                    <img src="a/hdr_res_7.jpg" align="middle" width="400px" />
+                    <figcaption>HDR Result Image 7</figcaption>
+                </td>
+            </tr>
+            <br />
+        </table>
+
+        <h2 align="left">References</h2>
+        <p>1. Hasinoff, Samuel W., et al. "Burst photography for high dynamic range and low-light imaging on mobile cameras." ACM Transactions on Graphics (ToG) 35.6 (2016): 1-12.</p>
+        <p>2. DEBEVEC, P. E., AND MALIK, J. 1997. Recovering high dynamic
+            range radiance maps from photographs. SIGGRAPH.</p>
+        <p>3. MERTENS, T., KAUTZ, J., AND REETH, F. V. 2007. Exposure
+            fusion. Pacific Graphics.</p>
+        <p>4. Hasinoff, Samuel W., et al.  HDR+ Burst Photography Dataset - Details, https://hdrplusdata.org/dataset.html. </p>
+        <p>5. Manansala, J. “Image Processing with Python: Image Warping Using Homography Matrix.” Medium, The Startup, 14 Feb. 2021, https://medium.com/swlh/image-processing-with-python-image-warping-using-homography-matrix-22096734f09a. </p>
+        <p>6. “Automatic Image Alignment .” CS194-26 Lecture Slides, UC Berkeley, https://inst.eecs.berkeley.edu/~cs194-26/fa22/Lectures/feature-alignment-Part-1.pdf. </p>
+
 
         <h2 align="left">Contributions</h2>
         <p>Akhil: Implemented chroma denoising and helped speed up exposure fusion. Contributed to video, website, and final presentation</p>
@@ -253,10 +398,13 @@
         <p>Larry: Implemented feature based RANSAC, optimized feature based RANSAC with jit + numpy, helped Andy optimize temporal alignment using numpy, and generated multiple aligned images for HDR pipeline. Contributed to video, website, and final presentation.</p>
         <p>Willie: Implemented exposure fusion, fine-tuned weights, and generated final result images. Contributed to video, website, and final presentation.
         </p>
+
+        <h2 align="left">Video and Final Slides</h2>
         
         <iframe align="center" width="500" height="500" src="https://www.youtube.com/embed/IwJ5Wko4QJ4">
         </iframe>
 
         <a href="https://docs.google.com/presentation/d/1xO0b1G6vld3S39woMyLxuwqrshqqG0cyYltDW2p24a4/edit?usp=sharing">Link to Slides</a>
-    </body>
+
+        </body>
 </html>
